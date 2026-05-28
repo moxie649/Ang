@@ -1,0 +1,15 @@
+{
+  "name": "file-upload-server",
+  "version": "1.0.0",
+  "description": "Node.js file upload service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "multer": "^2.0.2"
+  }
+}

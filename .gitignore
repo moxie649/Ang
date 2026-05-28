@@ -22,3 +22,28 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables
+.env
+.env.local
+.env.production
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Uploads
+uploads/
+!uploads/.gitkeep
+
+# Database
+db/*.json
+db/*.db
+
+# Testing
+coverage
+.nyc_output
+
+# Misc
+*.pem
+*.key

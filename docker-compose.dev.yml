@@ -1,0 +1,33 @@
+# 本地开发覆盖配置
+# 此文件不会被提交到 Git，用于本地开发环境自定义配置
+# docker-compose 会自动读取此文件并覆盖主配置
+
+services:
+  frontend:
+    build:
+      target: builder  # 开发时使用构建阶段，方便调试
+    ports:
+      - "5173:5173"  # Vite 开发服务器端口
+    volumes:
+      - ./src:/app/src:ro  # 挂载源代码（只读）
+    environment:
+      - NODE_ENV=development
+    command: ["npm", "run", "dev", "--", "--host"]  # 启动开发服务器
+    # 开发模式健康检查: Vite 运行在 5173 端口，node 镜像无 curl，用 node 发起检查
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5173/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  backend:
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend:/app  # 挂载后端代码
+      - ./backend/uploads:/app/uploads  # 挂载上传目录（可写）
+      - /app/node_modules  # 匿名卷：保留镜像中的 node_modules，防止被 bind mount 覆盖
+    environment:
+      - NODE_ENV=development
+    command: ["npm", "run", "dev"]  # 使用开发模式启动
