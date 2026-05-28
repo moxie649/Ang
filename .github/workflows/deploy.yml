@@ -1,55 +1,35 @@
-name: 自动部署到阿里云ECS
+script: |
+  set -euo pipefail
+  echo "================ 开始部署 ================"
+  cd ${{ secrets.SERVER_DEPLOY_PATH }}
 
-on:
-  push:
-    branches:
-      - main
+  # 1. 拉取最新代码（如果目录不是Git仓库，先初始化）
+  echo ">>> 拉取代码"
+  if [ ! -d .git ]; then
+    git init
+    git remote add origin https://github.com/moxie649/Ang.git
+  fi
+  git pull origin main || true
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: 拉取代码
-        uses: actions/checkout@v4
+  # 2. 停止并删除旧容器（容错）
+  echo ">>> 停止旧容器"
+  docker stop my-app 2>/dev/null || true
+  docker rm my-app 2>/dev/null || true
 
-      - name: 通过SSH连接服务器并部署
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          timeout: 60s
-          command_timeout: 5m
-          script: |
-            set -euo pipefail
-            echo "================ 开始部署 ================"
-            cd ${{ secrets.SERVER_DEPLOY_PATH }}
+  # 3. 构建镜像（固定小写，避免报错）
+  echo ">>> 构建镜像"
+  docker build -t my-app:latest .
 
-            # 1. 拉取最新代码
-            echo ">>> 拉取代码"
-            git pull origin main
+  # 4. 启动新容器
+  echo ">>> 启动容器"
+  docker run -d \
+    --name my-app \
+    --restart=always \
+    -p 3000:3000 \
+    my-app:latest
 
-            # 2. 停止并删除旧容器（容错）
-            echo ">>> 停止旧容器"
-            docker stop my-app 2>/dev/null || true
-            docker rm my-app 2>/dev/null || true
+  # 5. 清理无用镜像
+  echo ">>> 清理镜像"
+  docker image prune -f
 
-            # 3. 构建镜像（固定小写，避免报错）
-            echo ">>> 构建镜像"
-            docker build -t my-app:latest .
-
-            # 4. 启动新容器
-            echo ">>> 启动容器"
-            docker run -d \
-              --name my-app \
-              --restart=always \
-              -p 3000:3000 \
-              my-app:latest
-
-            # 5. 清理无用镜像
-            echo ">>> 清理镜像"
-            docker image prune -f
-
-            echo "================ 部署完成 ================"
+  echo "================ 部署完成 ================"
