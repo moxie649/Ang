@@ -40,9 +40,9 @@ jobs:
             docker stop my-app 2>/dev/null || true
             docker rm my-app 2>/dev/null || true
 
-            # 3. 构建镜像（固定小写，避免报错）
+            # 3. 构建镜像（关键：指定Dockerfile所在的frontend目录）
             echo ">>> 构建镜像"
-            docker build -t my-app:latest .
+            docker build -t my-app:latest ./frontend
 
             # 4. 启动新容器
             echo ">>> 启动容器"
@@ -54,6 +54,7 @@ jobs:
 
             # 5. 清理无用镜像
             echo ">>> 清理镜像"
-            docker image prune -f
+            docker image prune -fgit add .github/workflows/deploy.yml
+
 
             echo "================ 部署完成 ================"
